@@ -57,7 +57,7 @@ Before you begin, ensure you have Python 3.8+ installed on your system.
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/ffcro3/MIDI_Music_Generator.git
-    cd liquid-funk-music-generator
+    cd MIDI_Music_Generator
     ```
 
 2.  **Create a virtual environment (recommended):**
