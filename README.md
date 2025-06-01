@@ -1,8 +1,5 @@
 # Liquid Funk Music Generator
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/ffcro3/MIDI_Music_Generator/main?style=for-the-badge) ![GitHub last commit](https://img.shields.io/github/last-commit/ffcro3/MIDI_Music_Generator?color=blue&style=for-the-badge) ![GitHub contributors](https://img.shields.io/github/contributors/ffcro3/MIDI_Music_Generator?style=for-the-badge) ![GitHub forks](https://img.shields.io/github/forks/ffcro3/MIDI_Music_Generator?style=for-the-badge) ![GitHub stars](https://img.shields.io/github/stars/ffcro3/MIDI_Music_Generator?style=for-the-badge)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-
 ## 🎶 Unleash Your Inner Liquid Funk Producer! 🚀
 
 Welcome to the **Liquid Funk Music Generator**, a desktop application designed to spark your creativity and accelerate your music production workflow. Ever wanted to quickly sketch out a full Liquid Funk track, complete with groovy basslines, ethereal pads, melodic leads, and tight drums? This tool is your answer!
