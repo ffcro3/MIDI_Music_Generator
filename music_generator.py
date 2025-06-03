@@ -251,6 +251,8 @@ class MusicGenerator:
         note_skip_probability = 0.1 # 10% de chance de pular uma nota dentro de um acorde
         chord_event_skip_probability = 0.05 # 5% de chance de pular um evento de acorde dentro do padrão rítmico
         velocity_random_range = 10 # Variação de +/- 10 na velocity final
+        timing_random_range = 15 # Variação de +/- 15 ticks no timing (para humanização)
+        duration_random_range = 20 # Variação de +/- 20 ticks na duração
 
         for measure_num in range(num_beats // 4): # Para cada compasso
             chord_name = chord_progression_roman[measure_num % progression_length]
@@ -273,6 +275,20 @@ class MusicGenerator:
                     duration = note_event_data['duration']
                     velocity_mult = note_event_data['velocity_mult']
                     
+                    # Adiciona variação de timing
+                    random_timing_offset = random.randint(-timing_random_range, timing_random_range)
+                    final_offset = start_tick_measure + offset + random_timing_offset
+                    # Garante que o offset não seja negativo
+                    if final_offset < start_tick_measure:
+                        final_offset = start_tick_measure
+
+                    # Adiciona variação de duração
+                    random_duration_offset = random.randint(-duration_random_range, duration_random_range)
+                    final_duration = duration + random_duration_offset
+                    # Garante que a duração mínima seja razoável (ex: 30 ticks)
+                    if final_duration < 30:
+                        final_duration = 30
+                    
                     for note_offset in chord_intervals:
                         # Chance de pular uma nota individual dentro do acorde
                         if random.random() < note_skip_probability:
@@ -284,14 +300,14 @@ class MusicGenerator:
                         base_vel = int(random.randint(70, 90) * velocity_mult)
                         final_velocity = max(20, min(127, base_vel + random.randint(-velocity_random_range, velocity_random_range))) # Garante velocity entre 20-127
                         
-                        events.append(('note_on', note, final_velocity, start_tick_measure + offset))
+                        events.append(('note_on', note, final_velocity, final_offset))
                         # Pequeno release para o efeito de "corte"
-                        events.append(('note_off', note, 0, start_tick_measure + offset + duration - 10)) 
+                        events.append(('note_off', note, 0, final_offset + final_duration - 10)) 
             else:
                 # Comportamento padrão para outros gêneros ou se não houver padrão rítmico
                 duration_ticks = self.ticks_per_beat * 4 - 10 # Padrão de 1 compasso sustentado
                 if selected_style == 'Trance' or selected_style == 'Psytrance':
-                    duration_ticks = self.ticks_per_beat * 4 - 10 # Pads mais longos para Trance/Psytrance
+                    duration_ticks = self.ticks_per_beat * 8 - 10 # Pads mais longos para Trance/Psytrance
 
                 for note_offset in chord_intervals:
                     note = base_note_for_chord + note_offset
@@ -336,7 +352,7 @@ class MusicGenerator:
 
                 velocity = random.randint(75, 100) # Variação de velocity
                 
-                # Duração da nota: colcheia, semicolcheia, ou semínima (quantizada)
+                # Duração da nota: colcheia, semicolheia, ou semínima (quantizada)
                 duration_multipliers = [1, 2, 4] # Semicolcheia, Colcheia, Semínima
                 duration_ticks = random.choice(duration_multipliers) * quantization_unit
                 
