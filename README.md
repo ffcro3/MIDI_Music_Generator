@@ -1,7 +1,3 @@
-<div align="center">
-  ![Logo do MIDI Music Generator](https://raw.githubusercontent.com/ffcro3/MIDI_Music_Generator/refs/heads/main/images/logo.png)
-</div>
-
 # MIDI Music Generator
 
 ## 🎶 Unleash Your Inner Music Producer! 🚀
