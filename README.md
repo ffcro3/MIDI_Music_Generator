@@ -1,5 +1,5 @@
 <div align="center">
-  ![Logo do MIDI Music Generator](https://github.com/ffcro3/MIDI_Music_Generator/blob/main/images/logo.png)
+  ![Logo do MIDI Music Generator](https://github.com/ffcro3/MIDI_Music_Generator/blob/main/images/logo.png?raw=true)
 </div>
 
 # MIDI Music Generator
