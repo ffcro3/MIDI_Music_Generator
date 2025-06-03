@@ -1,4 +1,4 @@
-# Liquid Funk Music Generator
+# MIDI Music Generator
 
 ## 🎶 Unleash Your Inner Liquid Funk Producer! 🚀
 
