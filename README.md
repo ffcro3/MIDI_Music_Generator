@@ -1,5 +1,5 @@
 <div align="center">
-  !https://imgur.com/4QUr0GZ
+  ![Logo do MIDI Music Generator](images/logo.png)
 </div>
 
 # MIDI Music Generator
