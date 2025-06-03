@@ -1,8 +1,8 @@
 # MIDI Music Generator
 
-## 🎶 Unleash Your Inner Liquid Funk Producer! 🚀
+## 🎶 Unleash Your Inner Music Producer! 🚀
 
-Welcome to the **MIDI Funk Music Generator**, a desktop application designed to spark your creativity and accelerate your music production workflow. Ever wanted to quickly sketch out a full Liquid Funk track, complete with groovy basslines, ethereal pads, melodic leads, and tight drums? This tool is your answer!
+Welcome to the **MIDI Music Generator**, a desktop application designed to spark your creativity and accelerate your music production workflow. Ever wanted to quickly sketch out a full track, complete with groovy basslines, ethereal pads, melodic leads, and tight drums? This tool is your answer!
 
 Built with Python and `tkinter` for the GUI, `mido` for MIDI manipulation, and `pygame` for real-time playback, this generator allows you to create MIDI compositions with customizable parameters and instantly hear your ideas come to life. Whether you're a seasoned producer looking for fresh inspiration or a beginner eager to explore music theory in action, this project is built for you.
 
@@ -46,7 +46,7 @@ We believe that creativity should be boundless, and tools like this can help unl
 
 ## 🚀 Getting Started
 
-Follow these steps to get the Liquid Funk Music Generator up and running on your machine.
+Follow these steps to get the MIDI Music Generator up and running on your machine.
 
 ### Prerequisites
 
@@ -96,7 +96,7 @@ python app_gui.py
 
 3.  **Adjust Parameters:**
 
-    * **BPM:** Set the tempo (e.g., 174 for classic Liquid Funk).
+    * **BPM:** Set the tempo (or enjoy our suggestions).
 
     * **Duration (Measures):** Define the length of your composition in 4/4 measures.
 
