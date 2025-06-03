@@ -1,5 +1,5 @@
 <div align="center">
-  [Imgur](https://imgur.com/4QUr0GZ)
+  ![Imgur](https://imgur.com/4QUr0GZ)
 </div>
 
 # MIDI Music Generator
