@@ -8,201 +8,202 @@ class MidiVisualizer(tk.Canvas):
         self.total_ticks = total_ticks
         self.note_height = 10 
         
-        # Amplia a faixa de notas para visualização
-        self.min_midi_note = 21 # A0 (nota MIDI mais baixa na maioria dos pianos)
-        self.max_midi_note = 108 # C8 (nota MIDI mais alta na maioria dos pianos)
+        # Ajustado: Faixa de notas MIDI para exibição (mais ampla)
+        self.min_display_note = 21 # A0 (nota MIDI mais baixa)
+        self.max_display_note = 108 # C8 (nota MIDI mais alta)
+        self.num_midi_notes_visible = self.max_display_note - self.min_display_note + 1
         
-        self.num_total_midi_notes = self.max_midi_note - self.min_midi_note + 1
-        
-        self.all_midi_events = {} 
-        self.ticks_per_beat = 480 
+        self.all_midi_events = {} # Inicializa para evitar NameError
+        self.ticks_per_beat = 480 # Valor padrão, será atualizado por set_midi_data
 
-        self.progress_line_id = None 
+        self.progress_line_id = None # Armazenará o ID da linha de progresso
         
         self.bind("<Configure>", self._on_resize)
-        
-        # Configurar barras de rolagem
-        self.hbar = tk.Scrollbar(master, orient=tk.HORIZONTAL, command=self.xview)
-        self.vbar = tk.Scrollbar(master, orient=tk.VERTICAL, command=self.yview)
-        
-        # Conectar as barras de rolagem ao canvas
-        self.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        
+        self.current_scroll_x = 0 
+
+        # Calcula a altura do canvas para as notas usando a faixa de exibição
+        self.canvas_height = self.num_midi_notes_visible * self.note_height
+
+        # Define um valor inicial para pixels_per_tick para evitar divisão por zero
+        # Será ajustado no _on_resize e set_midi_data para melhor visualização
+        self.pixels_per_tick = 0.5 
+
+        # Vincula eventos da roda do mouse para rolagem condicional (vertical por padrão, horizontal com Shift)
+        self.bind("<MouseWheel>", self._on_mouse_scroll) # Windows/macOS
+        self.bind("<Button-4>", self._on_mouse_scroll) # Linux (roda para cima)
+        self.bind("<Button-5>", self._on_mouse_scroll) # Linux (roda para baixo)
+
+
     def _on_resize(self, event):
-        # Quando o canvas é redimensionado, ajustamos o scrollregion
+        # Atualiza a largura do canvas visível
+        self.visible_canvas_width = self.winfo_width()
         
-        # Recalcula o scrollregion com a nova largura e altura do canvas
-        self.configure(scrollregion=(0, 0, self.get_content_width_in_pixels(), self.get_content_height_in_pixels()))
+        # Recalcula pixels_per_tick para tentar encaixar a música na largura visível,
+        # mas permitindo rolagem se for muito longa.
+        if self.total_ticks > 0:
+            # Tenta fazer com que 4 compassos (16 batidas) sejam visíveis inicialmente
+            # Se a música for menor, ajusta para a música inteira.
+            desired_visible_ticks = 16 * self.ticks_per_beat # 4 compassos
+            
+            # Calcula pixels_per_tick para a largura visível atual
+            calculated_pp_tick = self.visible_canvas_width / desired_visible_ticks
+            
+            # Se a música inteira for menor que a largura visível, ajusta pp_tick para caber tudo
+            if self.total_ticks * calculated_pp_tick < self.visible_canvas_width:
+                 self.pixels_per_tick = self.visible_canvas_width / (self.total_ticks * 1.05) # Pequena margem
+            else:
+                 self.pixels_per_tick = calculated_pp_tick
+        else:
+            self.pixels_per_tick = 0.5 # Fallback se não houver ticks
 
         self.redraw_notes()
-        # Não é necessário chamar update_progress_line aqui.
-        # redraw_notes já redesenha a linha de progresso se ela existir.
-
-
-    def get_content_width_in_pixels(self):
-        """Calcula a largura total do conteúdo em pixels para o scrollregion horizontal."""
         
-        pixels_per_beat = 30 # Ajuste este valor para controlar a "densidade" horizontal
-        
-        # O total_ticks precisa ser convertido para beats (semínimas)
-        total_beats = self.total_ticks / self.ticks_per_beat if self.ticks_per_beat > 0 else 0
-        
-        calculated_width = total_beats * pixels_per_beat
-        
-        # Garante que a largura do conteúdo seja pelo menos a largura da janela para que a barra de rolagem apareça se necessário
-        return max(self.winfo_width(), calculated_width)
+        # Após redimensionar, se a linha de progresso existir, redesenha-a
+        if self.progress_line_id:
+            self.update_progress_line(self.get_current_progress_ticks())
 
+    def get_current_progress_ticks(self):
+        """Retorna a posição atual da linha de progresso em ticks (se existir)."""
+        if self.progress_line_id:
+            # A posição da linha é o primeiro ponto X da linha
+            x_coord = self.coords(self.progress_line_id)[0]
+            return int(x_coord / self.pixels_per_tick)
+        return 0
 
-    def get_content_height_in_pixels(self):
-        """Calcula a altura total do conteúdo em pixels para o scrollregion vertical."""
-        
-        calculated_height = self.num_total_midi_notes * self.note_height + 20 # +20 para um pequeno padding
-        
-        # Garante que a altura do conteúdo seja pelo menos a altura da janela
-        return max(self.winfo_height(), calculated_height)
-
-
-    def set_midi_data(self, all_midi_events, ticks_per_beat):
+    def set_midi_data(self, all_midi_events, total_ticks, ticks_per_beat):
+        """
+        Define os dados MIDI para o visualizador.
+        :param all_midi_events: Dicionário de eventos MIDI por parte.
+        :param total_ticks: O número total de ticks da música.
+        :param ticks_per_beat: A resolução de ticks por batida.
+        """
         self.all_midi_events = all_midi_events
+        self.total_ticks = total_ticks 
         self.ticks_per_beat = ticks_per_beat
         
-        # Encontra o total de ticks mais alto de todos os eventos para definir a largura total do scrollregion
-        max_tick = 0
-        for part_name, events in self.all_midi_events.items():
-            for event_type, note, velocity, time in events:
-                if event_type == 'note_on':
-                    # Procura a nota off correspondente para pegar a duração
-                    note_off_time = None
-                    for off_event_type, off_note, _, off_time in events:
-                        if off_event_type == 'note_off' and off_note == note and off_time >= time:
-                            note_off_time = off_time
-                            break
-                    if note_off_time is not None:
-                        max_tick = max(max_tick, note_off_time)
-                    else: # Se não encontrar note_off, assume uma duração curta
-                        max_tick = max(max_tick, time + self.ticks_per_beat) # Assume 1 beat de duração
-                
-        self.total_ticks = max_tick if max_tick > 0 else 1 # Garante que total_ticks seja pelo menos 1
-
-        # Atualiza o scrollregion com a nova largura e altura
-        self.config(scrollregion=(0, 0, self.get_content_width_in_pixels(), self.get_content_height_in_pixels()))
+        # Força o recálculo de pixels_per_tick e redraw ao definir novos dados
+        self._on_resize(None) # Simula um evento de redimensionamento para recalcular pp_tick e redraw
         
-        self.redraw_notes()
-        self.delete_progress_line()
+        # Atualiza a região de rolagem do canvas com base no novo total_ticks e pixels_per_tick
+        scroll_width = self.total_ticks * self.pixels_per_tick * 1.05 # Pequena margem para rolagem
+        self.config(scrollregion=(0, 0, scroll_width, self.canvas_height))
+        self.xview_moveto(0) # Volta ao início após carregar novos dados
 
     def redraw_notes(self):
-        self.delete("all") 
-
-        canvas_width = self.winfo_width() # Largura visível do canvas
-        canvas_height = self.winfo_height() # Altura visível do canvas
-
-        if canvas_width == 0 or canvas_height == 0:
-            return 
-
-        # Calcula a escala de pixels por tick para a largura total do *scrollregion*
-        content_width_pixels = self.get_content_width_in_pixels()
-        pixels_per_tick = content_width_pixels / self.total_ticks if self.total_ticks > 0 else 1
-
-        # Mapeamento vertical: notas MIDI para posição Y
-        content_height_pixels = self.get_content_height_in_pixels()
-        pixels_per_midi_note = content_height_pixels / self.num_total_midi_notes
-
-        # Desenhar linhas de compasso (a cada 4 beats)
-        for i in range(0, self.total_ticks + 1, self.ticks_per_beat * 4):
-            x = i * pixels_per_tick
-            # Desenha a linha vertical que atravessa toda a altura do scrollregion
-            self.create_line(x, 0, x, content_height_pixels, fill="lightgray", dash=(2, 2))
-
-        # Cores para cada tipo de parte
-        colors = { 
-            'bass': 'blue',
-            'chords': 'green',
-            'lead': 'red',
-            'pads': 'purple',
-            'arpeggio': 'orange' 
-        }
-
-        # Desenhar as notas
+        self.delete("notes") # Limpa todas as notas existentes
+        
+        # Calcula a largura total do conteúdo do MIDI
+        content_width = self.total_ticks * self.pixels_per_tick
+        
+        # Ajusta a largura do canvas para ser pelo menos a largura visível ou o conteúdo
+        self.config(width=max(self.winfo_width(), content_width))
+        
+        # Desenha as notas
         for part_name, events in self.all_midi_events.items():
-            if not events: continue 
-
             for event_type, note, velocity, time in events:
                 if event_type == 'note_on':
+                    # Encontra o evento 'note_off' correspondente
                     note_off_time = None
-                    for off_event_type, off_note, _, off_time in events:
+                    for off_event_type, off_note, off_velocity, off_time in events:
                         if off_event_type == 'note_off' and off_note == note and off_time >= time:
                             note_off_time = off_time
                             break
                     
                     if note_off_time is not None:
-                        x1 = time * pixels_per_tick
-                        x2 = note_off_time * pixels_per_tick
+                        x1 = time * self.pixels_per_tick
+                        x2 = note_off_time * self.pixels_per_tick
                         
-                        # Mapeamento vertical para Y: notas MIDI para posição Y
-                        # Notas mais altas terão um Y menor (mais para cima no canvas)
-                        # Queremos que a nota mais baixa (min_midi_note) apareça no fundo do canvas
-                        # e a nota mais alta (max_midi_note) apareça no topo.
-                        
-                        y_bottom = content_height_pixels - ((note - self.min_midi_note) * pixels_per_midi_note)
-                        y_top = y_bottom - self.note_height
-                        
-                        self.create_rectangle(x1, y_bottom, x2, y_top, fill=colors.get(part_name, 'black'), outline="")
-        
-        # Redesenha a linha de progresso se ela existir.
-        # A posição é mantida pelo update_progress_line principal.
+                        # Mapeia a nota MIDI para a posição Y no visualizador
+                        # Inverte a ordem para que notas mais altas fiquem no topo
+                        # Usa min_display_note para mapear corretamente dentro da faixa visível
+                        y1 = self.canvas_height - ((note - self.min_display_note) * self.note_height)
+                        y2 = y1 - self.note_height # Altura da nota
+
+                        # Cor da nota (pode ser personalizada por parte ou velocidade)
+                        color = "blue"
+                        if part_name == 'bass': color = "darkred"
+                        elif part_name == 'chords': color = "green"
+                        elif part_name == 'lead': color = "purple"
+                        elif part_name == 'pads': color = "orange"
+                        elif part_name == 'arpeggio': color = "teal"
+                        elif part_name == 'drums': color = "gray" # Bateria pode ter cores diferentes para cada instrumento
+
+                        self.create_rectangle(x1, y1, x2, y2, fill=color, outline="black", tags="notes")
+
+        # Redesenha a linha de progresso para garantir que esteja visível
         if self.progress_line_id:
-            # Reutiliza a última posição conhecida ou 0 se não houver
-            last_progress_x = self.coords(self.progress_line_id)[0] if self.coords(self.progress_line_id) else 0
-            
-            # Converte pixels para ticks para chamar update_progress_line
-            # Isso é um pouco redundante, mas garante que a linha seja redesenhada no lugar certo
-            # após um redimensionamento, assumindo que já estava em alguma posição.
-            current_ticks_on_redraw = last_progress_x / pixels_per_tick if pixels_per_tick > 0 else 0
-            self.update_progress_line(current_ticks_on_redraw)
+            self.update_progress_line(self.get_current_progress_ticks())
 
 
     def update_progress_line(self, current_ticks):
-        """Cria ou atualiza a linha de progresso no canvas."""
-        canvas_width = self.winfo_width() # Largura visível do canvas
-        canvas_height = self.winfo_height() # Altura visível do canvas
-
-        if canvas_width == 0 or canvas_height == 0 or self.total_ticks == 0:
-            return
-
-        # pixels_per_tick é calculado com base na largura total do conteúdo
-        content_width_pixels = self.get_content_width_in_pixels()
-        pixels_per_tick = content_width_pixels / self.total_ticks if self.total_ticks > 0 else 1
+        """
+        Atualiza a posição da linha de progresso no visualizador e rola o canvas.
+        :param current_ticks: A posição atual em ticks MIDI.
+        """
+        x_position = current_ticks * self.pixels_per_tick
         
-        x_position_on_content = current_ticks * pixels_per_tick
-
-        if self.progress_line_id:
-            # Move a linha existente. Note que ela se estende por toda a altura do scrollregion.
-            self.coords(self.progress_line_id, x_position_on_content, 0, x_position_on_content, self.get_content_height_in_pixels())
-        else:
-            self.progress_line_id = self.create_line(x_position_on_content, 0, x_position_on_content, self.get_content_height_in_pixels(), fill="red", width=2, tags="progress_line")
-            # Envia a linha para o topo para que fique visível sobre as notas
-            self.tag_raise(self.progress_line_id) 
-        
-        # Ajusta a visualização para manter a linha de progresso visível
-        # `xview_moveto` trabalha com frações do scrollregion total
-        visible_left_fraction, visible_right_fraction = self.xview()
-        
-        # Converte a posição da linha em pixels para a fração do scrollregion
-        line_fraction = x_position_on_content / content_width_pixels if content_width_pixels > 0 else 0
-
-        # Se a linha de progresso estiver fora da vista à direita
-        if line_fraction > visible_right_fraction:
-            # Rola para que a linha fique no meio da vista
-            new_scroll_fraction = line_fraction - (0.5 * (visible_right_fraction - visible_left_fraction))
-            self.xview_moveto(new_scroll_fraction)
-        # Se a linha de progresso estiver fora da vista à esquerda
-        elif line_fraction < visible_left_fraction:
-            new_scroll_fraction = line_fraction - (0.5 * (visible_right_fraction - visible_left_fraction))
-            if new_scroll_fraction < 0: new_scroll_fraction = 0
-            self.xview_moveto(new_scroll_fraction)
-
-    def delete_progress_line(self):
-        """Remove a linha de progresso do canvas."""
         if self.progress_line_id:
             self.delete(self.progress_line_id)
-            self.progress_line_id = None
+        
+        # Desenha a linha de progresso
+        self.progress_line_id = self.create_line(x_position, 0, x_position, self.canvas_height, fill="red", width=2, tags="progress_line")
+        
+        # Rola o canvas para manter a linha de progresso visível
+        canvas_width = self.winfo_width()
+        
+        # Adiciona verificação de tipo para garantir que xview() retorne uma tupla.
+        xview_result = self.xview() 
+        if not isinstance(xview_result, tuple) or len(xview_result) < 2:
+            # Fallback seguro caso xview() retorne algo inesperado
+            print(f"WARNING: self.xview() returned unexpected type/length: {type(xview_result)} - {xview_result}. Defaulting to (0.0, 1.0).")
+            visible_left_fraction = 0.0
+            visible_right_fraction = 1.0 
+        else:
+            visible_left_fraction = xview_result[0]
+            visible_right_fraction = xview_result[1]
+        
+        # Converte as frações de rolagem para pixels
+        # Garante que total_scrollable_width não seja zero para evitar ZeroDivisionError
+        total_scrollable_width = self.total_ticks * self.pixels_per_tick * 1.5 
+        if total_scrollable_width == 0: 
+            total_scrollable_width = 1 # Evita divisão por zero, embora o scroll não funcione bem neste caso
+
+        current_x_scroll_pixel_start = visible_left_fraction * total_scrollable_width
+        current_x_scroll_pixel_end = visible_right_fraction * total_scrollable_width 
+
+        # Se a linha de progresso estiver fora da vista à direita
+        if x_position > current_x_scroll_pixel_end - (canvas_width * 0.2): # Rola um pouco antes do final
+            new_scroll_x = x_position - (canvas_width * 0.5) # Tenta centralizar
+            if new_scroll_x < 0: new_scroll_x = 0 # Não rola para antes do início
+            
+            scroll_fraction = new_scroll_x / total_scrollable_width
+            self.xview_moveto(scroll_fraction)
+        # Se a linha de progresso estiver fora da vista à esquerda (rola para trás)
+        elif x_position < current_x_scroll_pixel_start + (canvas_width * 0.2): # Rola um pouco depois do início
+            new_scroll_x = x_position - (canvas_width * 0.5)
+            if new_scroll_x < 0: new_scroll_x = 0
+            scroll_fraction = new_scroll_x / total_scrollable_width
+            self.xview_moveto(scroll_fraction)
+
+    # Função para lidar com o scroll do mouse
+    def _on_mouse_scroll(self, event):
+        # Determina a direção do scroll
+        scroll_direction = 0
+        if event.delta: # Windows/macOS
+            scroll_direction = -int(event.delta / 120) # -1 para scroll para baixo, 1 para scroll para cima
+        elif event.num == 4: # Linux (roda para cima)
+            scroll_direction = 1
+        elif event.num == 5: # Linux (roda para baixo)
+            scroll_direction = -1
+        else:
+            return # Não é um evento de scroll de roda
+
+        # Verifica se a tecla Shift está pressionada (estado 0x1)
+        if event.state & 0x1: # Shift key is pressed
+            # Rolagem horizontal
+            scroll_amount_units = 5 # Rolagem mais suave em "unidades" (pode ser ajustado)
+            self.xview_scroll(scroll_direction * scroll_amount_units, "units")
+        else:
+            # Rolagem vertical (padrão)
+            scroll_amount_units = 5 # Ajuste a sensibilidade da rolagem vertical
+            self.yview_scroll(scroll_direction * scroll_amount_units, "units")
