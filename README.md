@@ -2,7 +2,7 @@
 
 ## 🎶 Unleash Your Inner Liquid Funk Producer! 🚀
 
-Welcome to the **Liquid Funk Music Generator**, a desktop application designed to spark your creativity and accelerate your music production workflow. Ever wanted to quickly sketch out a full Liquid Funk track, complete with groovy basslines, ethereal pads, melodic leads, and tight drums? This tool is your answer!
+Welcome to the **MIDI Funk Music Generator**, a desktop application designed to spark your creativity and accelerate your music production workflow. Ever wanted to quickly sketch out a full Liquid Funk track, complete with groovy basslines, ethereal pads, melodic leads, and tight drums? This tool is your answer!
 
 Built with Python and `tkinter` for the GUI, `mido` for MIDI manipulation, and `pygame` for real-time playback, this generator allows you to create MIDI compositions with customizable parameters and instantly hear your ideas come to life. Whether you're a seasoned producer looking for fresh inspiration or a beginner eager to explore music theory in action, this project is built for you.
 
@@ -92,7 +92,9 @@ python app_gui.py
 
 1.  **Set Project Name:** Enter a descriptive name for your musical project in the "Project Name" field. This will be the name of the main folder where your MIDIs will be saved.
 
-2.  **Adjust Parameters:**
+2.  **Set a Genre:** Drum and bass, House, Trance and Pystrance (evaualing new genres) 
+
+3.  **Adjust Parameters:**
 
     * **BPM:** Set the tempo (e.g., 174 for classic Liquid Funk).
 
@@ -102,15 +104,15 @@ python app_gui.py
 
     * **Scale Type:** Select between 'Major' or 'Minor' scales.
 
-3.  **Select Parts:** Check the boxes for the musical parts you wish to generate (Bass, Chords, Lead, Pads, Arpeggio, Drums).
+4.  **Select Parts:** Check the boxes for the musical parts you wish to generate (Bass, Chords, Lead, Pads, Arpeggio, Drums).
 
-4.  **Generate MIDI:** Click the **`Gerar MIDI`** (Generate MIDI) button. The application will compute the musical parts and display them in the visualizer. A temporary MIDI file is created for immediate playback.
+5.  **Generate MIDI:** Click the **`Gerar MIDI`** (Generate MIDI) button. The application will compute the musical parts and display them in the visualizer. A temporary MIDI file is created for immediate playback.
 
-5.  **Reproduce MIDI:** Click the **`Reproduzir MIDI`** (Play MIDI) button to listen to the generated track.
+6.  **Reproduce MIDI:** Click the **`Reproduzir MIDI`** (Play MIDI) button to listen to the generated track.
 
-6.  **Stop Playback:** Click **`Parar Reprodução`** (Stop Playback) to halt the audio.
+7.  **Stop Playback:** Click **`Parar Reprodução`** (Stop Playback) to halt the audio.
 
-7.  **Save MIDI:**
+8.  **Save MIDI:**
 
     * Click the **`Salvar MIDI`** (Save MIDI) dropdown button.
 
@@ -120,7 +122,7 @@ python app_gui.py
 
     * All files will be saved in `MIDIs_Gerados/YourProjectName/` with timestamps (e.g., `Full_Mix_20240530_143000.mid`, `bass_20240530_143000.mid`).
 
-8.  **Open MIDI Folder:** Click **`Abrir Pasta de MIDIs Gerados`** (Open Generated MIDIs Folder) to directly access the project folder where your MIDI files are stored.
+9.  **Open MIDI Folder:** Click **`Abrir Pasta de MIDIs Gerados`** (Open Generated MIDIs Folder) to directly access the project folder where your MIDI files are stored.
 
 ## 🤝 Contributing
 
